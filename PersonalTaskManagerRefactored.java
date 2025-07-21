@@ -1,135 +1,110 @@
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
 
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+import java.util.ArrayList;
+import java.util.Scanner;
 
 public class PersonalTaskManagerRefactored {
+    private static final Scanner scanner = new Scanner(System.in);
+    private static final ArrayList<String> tasks = new ArrayList<>();
 
-    private static final String DB_FILE_PATH = "tasks_database.json";
-    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-
-    // REFACTOR 1: Hàm đọc dữ liệu từ file JSON
-    private static JSONArray loadTasksFromDb() {
-        try (FileReader reader = new FileReader(DB_FILE_PATH)) {
-            Object obj = new JSONParser().parse(reader);
-            if (obj instanceof JSONArray) {
-                return (JSONArray) obj;
-            }
-        } catch (IOException | ParseException e) {
-            System.err.println("Lỗi khi đọc dữ liệu: " + e.getMessage());
-        }
-        return new JSONArray();
-    }
-
-    // REFACTOR 2: Hàm ghi dữ liệu vào file JSON
-    private static void saveTasksToDb(JSONArray tasksData) {
-        try (FileWriter file = new FileWriter(DB_FILE_PATH)) {
-            file.write(tasksData.toJSONString());
-        } catch (IOException e) {
-            System.err.println("Lỗi khi ghi dữ liệu: " + e.getMessage());
-        }
-    }
-
-    // REFACTOR 3: Kiểm tra chuỗi rỗng
-    private boolean isEmpty(String str) {
-        return str == null || str.trim().isEmpty();
-    }
-
-    // REFACTOR 4: Kiểm tra ngày đến hạn hợp lệ
-    private LocalDate validateDueDate(String dueDateStr) {
-        try {
-            return LocalDate.parse(dueDateStr, DATE_FORMATTER);
-        } catch (DateTimeParseException e) {
-            System.out.println("Ngày đến hạn không hợp lệ. Định dạng đúng: YYYY-MM-DD.");
-            return null;
-        }
-    }
-
-    // REFACTOR 5: Kiểm tra mức độ ưu tiên
-    private boolean isValidPriority(String level) {
-        List<String> validLevels = Arrays.asList("Thấp", "Trung bình", "Cao");
-        return validLevels.contains(level);
-    }
-
-    // REFACTOR 6: Kiểm tra nhiệm vụ trùng lặp
-    private boolean isDuplicateTask(JSONArray tasks, String title, LocalDate dueDate) {
-        for (Object obj : tasks) {
-            JSONObject task = (JSONObject) obj;
-            String existingTitle = (String) task.get("title");
-            String existingDate = (String) task.get("due_date");
-
-            if (existingTitle.equalsIgnoreCase(title)
-                    && existingDate.equals(dueDate.format(DATE_FORMATTER))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    // HÀM CHÍNH: Thêm nhiệm vụ mới
-    public JSONObject addNewTask(String title, String description,
-                                 String dueDateStr, String priorityLevel) {
-
-        // B1: Kiểm tra tiêu đề
-        if (isEmpty(title)) {
-            System.out.println("Tiêu đề không được để trống.");
-            return null;
-        }
-
-        // B2: Kiểm tra ngày đến hạn
-        LocalDate dueDate = validateDueDate(dueDateStr);
-        if (dueDate == null) return null;
-
-        // B3: Kiểm tra mức độ ưu tiên
-        if (!isValidPriority(priorityLevel)) {
-            System.out.println("Mức độ ưu tiên không hợp lệ. Chọn: Thấp, Trung bình, Cao.");
-            return null;
-        }
-
-        // B4: Load dữ liệu
-        JSONArray tasks = loadTasksFromDb();
-
-        // B5: Kiểm tra trùng lặp
-        if (isDuplicateTask(tasks, title, dueDate)) {
-            System.out.println("Nhiệm vụ đã tồn tại với cùng ngày đến hạn.");
-            return null;
-        }
-
-        // B6: Tạo đối tượng nhiệm vụ
-        JSONObject task = new JSONObject();
-        task.put("id", UUID.randomUUID().toString());
-        task.put("title", title);
-        task.put("description", description);
-        task.put("due_date", dueDate.format(DATE_FORMATTER));
-        task.put("priority", priorityLevel);
-        task.put("status", "Chưa hoàn thành");
-
-        String now = LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME);
-        task.put("created_at", now);
-        task.put("last_updated_at", now);
-
-        // B7: Thêm vào danh sách và lưu
-        tasks.add(task);
-        saveTasksToDb(tasks);
-
-        System.out.println("Đã thêm nhiệm vụ: " + title);
-        return task;
-    }
-
-    // Hàm chạy thử
     public static void main(String[] args) {
-        PersonalTaskManagerRefactored manager = new PersonalTaskManagerRefactored();
-        manager.addNewTask("Học Java", "Ôn lại lập trình hướng đối tượng", "2025-07-22", "Cao");
+        while (true) {
+            printMenu();
+            String choice = scanner.nextLine().trim();
+
+            switch (choice) {
+                case "1" -> addTask();
+                case "2" -> removeTask();
+                case "3" -> updateTask();
+                case "4" -> viewTasks();
+                case "5" -> {
+                    System.out.println("Đã thoát chương trình.");
+                    return;
+                }
+                default -> System.out.println("Lựa chọn không hợp lệ. Vui lòng thử lại.");
+            }
+        }
+    }
+
+    private static void printMenu() {
+        System.out.println("\n=== TRÌNH QUẢN LÝ CÔNG VIỆC CÁ NHÂN ===");
+        System.out.println("1. Thêm công việc");
+        System.out.println("2. Xóa công việc");
+        System.out.println("3. Cập nhật công việc");
+        System.out.println("4. Xem danh sách công việc");
+        System.out.println("5. Thoát");
+        System.out.print("Chọn chức năng (1-5): ");
+    }
+
+    private static void addTask() {
+        System.out.print("Nhập tên công việc mới: ");
+        String task = scanner.nextLine().trim();
+        if (!task.isEmpty()) {
+            tasks.add(task);
+            System.out.println("Đã thêm: " + task);
+        } else {
+            System.out.println("Tên công việc không được để trống.");
+        }
+    }
+
+    private static void removeTask() {
+        if (tasks.isEmpty()) {
+            System.out.println("Danh sách công việc trống.");
+            return;
+        }
+
+        viewTasks();
+        int index = getTaskIndex("Nhập số thứ tự công việc cần xóa: ");
+        if (isValidIndex(index)) {
+            System.out.println("Đã xóa: " + tasks.remove(index));
+        } else {
+            System.out.println("Vị trí không hợp lệ.");
+        }
+    }
+
+    private static void updateTask() {
+        if (tasks.isEmpty()) {
+            System.out.println("Danh sách công việc trống.");
+            return;
+        }
+
+        viewTasks();
+        int index = getTaskIndex("Nhập số thứ tự công việc cần cập nhật: ");
+        if (isValidIndex(index)) {
+            System.out.print("Nhập nội dung mới: ");
+            String newTask = scanner.nextLine().trim();
+            if (!newTask.isEmpty()) {
+                tasks.set(index, newTask);
+                System.out.println("Đã cập nhật.");
+            } else {
+                System.out.println("Nội dung không được để trống.");
+            }
+        } else {
+            System.out.println("Vị trí không hợp lệ.");
+        }
+    }
+
+    private static void viewTasks() {
+        if (tasks.isEmpty()) {
+            System.out.println("Danh sách công việc trống.");
+            return;
+        }
+
+        System.out.println("\nDanh sách công việc:");
+        for (int i = 0; i < tasks.size(); i++) {
+            System.out.printf("%d. %s\n", i + 1, tasks.get(i));
+        }
+    }
+
+    private static int getTaskIndex(String prompt) {
+        System.out.print(prompt);
+        try {
+            return Integer.parseInt(scanner.nextLine().trim()) - 1;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+       private static boolean isValidIndex(int index) {
+        return index >= 0 && index < tasks.size();
     }
 }
