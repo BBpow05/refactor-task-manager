@@ -54,20 +54,20 @@ public class PersonalTaskManagerRefactored {
             int index = Integer.parseInt(scanner.nextLine()) - 1;
             if (index >= 0 && index < tasks.size()) {
                 tasks.remove(index);
-                System.out.println("✔ Đã xóa nhiệm vụ.");
+                System.out.println("Đã xóa nhiệm vụ.");
             } else {
-                System.out.println("❌ Vị trí không hợp lệ.");
+                System.out.println("Vị trí không hợp lệ.");
             }
         } catch (NumberFormatException e) {
-            System.out.println("❌ Lỗi: Nhập không hợp lệ.");
+            System.out.println("Lỗi: Nhập không hợp lệ.");
         }
     }
 
     private static void viewTasks() {
         if (tasks.isEmpty()) {
-            System.out.println("📭 Danh sách nhiệm vụ trống.");
+            System.out.println("Danh sách nhiệm vụ trống.");
         } else {
-            System.out.println("📋 Danh sách nhiệm vụ:");
+            System.out.println("Danh sách nhiệm vụ:");
             for (int i = 0; i < tasks.size(); i++) {
                 System.out.printf("%d. %s%n", i + 1, tasks.get(i));
             }
